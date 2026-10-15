@@ -1,81 +1,81 @@
-# Sistema de Ventas
+# SistemaVentas — Next.js
 
-Modernización del sistema original hecho con Java/JSP en NetBeans 8.2 a un
-monorepo con **Next.js 16**, **React 19**, **NestJS 11**, TypeScript y MySQL /
-MariaDB. La aplicación conserva los módulos y la identidad visual azul del
-original, y reutiliza las tablas de `base/bd_ventas.sql`.
-
-## Módulos
-
-- Inicio de sesión de empleados y panel con resumen de ventas.
-- Administración de empleados, clientes y productos (crear, editar y
-  desactivar).
-- Registro de ventas con varios productos, verificación transaccional de stock,
-  actualización del inventario e historial de ventas.
-- Interfaz adaptable a pantallas pequeñas y mensajes de error visibles.
-
-Los registros se desactivan en vez de borrarse para mantener las relaciones
-históricas de ventas.
+Aplicación web para gestionar clientes, empleados, productos e historial de ventas. Se generó con `npx create-next-app@latest`, usa Next.js App Router, Tailwind CSS, API Routes y Prisma ORM. El proyecto Java/NetBeans original permanece en la carpeta superior.
 
 ## Requisitos
 
-- Node.js 20.9 o posterior y npm.
-- MySQL o MariaDB compatible con el volcado SQL.
+- Node.js 20.9 o posterior.
+- MySQL 8/MariaDB o una instancia MySQL compatible de TiDB Cloud.
+- La base existente `bd_ventas`, cargada desde `../base/bd_ventas.sql`.
 
-## Preparar la base de datos
+## Desarrollo local
 
-Importa `base/bd_ventas.sql` en una base llamada `bd_ventas`. El archivo contiene
-el esquema y los datos iniciales, pero no crea la base de datos por sí solo. Por
-ejemplo, desde una consola de MySQL:
-
-```sql
-CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
-```
-
-Después selecciona `bd_ventas` e importa el archivo SQL desde phpMyAdmin o con
-una herramienta local de MySQL. El volcado incluye empleados de ejemplo: por
-ejemplo, usuario `emp01` y DNI `123`.
-
-## Configuración y ejecución
-
-1. Copia `.env.example` a `.env` en la raíz y ajusta los valores `DB_*` para tu
-   servidor MySQL. El valor predeterminado es `root` sin contraseña, como en la
-   conexión del proyecto Java original.
-2. Instala las dependencias y arranca ambos servicios desde la raíz:
+1. Instala dependencias desde esta carpeta:
 
    ```bash
    npm install
+   ```
+
+2. Copia `.env.example` a `.env.local` y configura las credenciales MySQL:
+
+   ```env
+   DATABASE_URL="mysql://usuario:contraseña@host:4000/bd_ventas?sslaccept=strict"
+   SESSION_SECRET="una-clave-aleatoria-de-al-menos-32-caracteres"
+   ```
+
+   Para TiDB Cloud, usa el endpoint, puerto, usuario y contraseña que proporciona el clúster y conserva TLS (`sslaccept=strict`). Codifica caracteres especiales de usuario/contraseña como URL-encoding.
+
+3. Asegúrate de que exista la base `bd_ventas` y luego importa `../base/bd_ventas.sql` en ella. Por ejemplo, con el cliente `mysql`:
+
+   ```bash
+   mysql --host=HOST --port=4000 --user=USER --password --ssl-mode=VERIFY_IDENTITY --execute="CREATE DATABASE IF NOT EXISTS bd_ventas"
+   mysql --host=HOST --port=4000 --user=USER --password --ssl-mode=VERIFY_IDENTITY bd_ventas < ../base/bd_ventas.sql
+   ```
+
+   O importa el archivo desde el editor SQL de TiDB Cloud. El esquema de Prisma está mapeado a las tablas y columnas originales; no ejecutes `prisma db push` contra la base con datos.
+
+4. Arranca Next.js:
+
+   ```bash
    npm run dev
    ```
 
-3. Abre `http://localhost:3000`. La API de NestJS escucha en
-   `http://localhost:4000/api`; su comprobación de salud está en
-   `http://localhost:4000/api/health`.
+   Abre `http://localhost:3000`.
 
-Para compilar ambos proyectos, ejecuta `npm run build`. Para ejecutar la versión
-compilada, usa `npm start`.
+## Inicio de sesión heredado
 
-Si la web o la API se ejecutan en otros orígenes, configura
-`NEXT_PUBLIC_API_URL` y `WEB_ORIGIN` en `.env` según corresponda.
+La base original no incluye una columna de contraseña: el servlet Java validaba `User` contra `Dni`. La pantalla migrada conserva ese comportamiento por compatibilidad. Los datos de ejemplo del SQL incluyen el usuario `emp01` y DNI `123` (también hay otros usuarios/DNI en `empleado`). Cambia este mecanismo por contraseñas con hash antes de usar el sistema con cuentas reales.
 
-## Nota de autenticación
+La sesión de Next.js se firma con `SESSION_SECRET`, se guarda en una cookie `HttpOnly`, `SameSite=Lax` y usa `Secure` en producción.
 
-El esquema heredado no dispone de una columna de contraseña: el inicio de sesión
-conserva la validación original de usuario y DNI. Esto sirve para compatibilidad
-con los datos existentes, pero **no equivale a autenticación segura para
-producción**. Antes de exponer el sistema, incorpora contraseñas con hash y una
-sesión autenticada en el servidor; no reutilices el DNI como contraseña.
+## Funcionalidad
 
-## Estructura
+- Panel con recuentos, inventario y ventas recientes.
+- Alta, consulta, edición y eliminación de clientes, empleados y productos.
+- Registro de ventas con varios productos, cálculo de precios desde la base de datos y descuento de stock transaccional.
+- Rutas API protegidas por sesión bajo `/api`.
+- Prisma mapea directamente las cinco tablas existentes (`cliente`, `empleado`, `producto`, `ventas`, `detalle_ventas`).
 
-```text
-apps/
-  api/       NestJS: API REST, validación, consultas y transacciones MySQL
-  web/       Next.js App Router: panel web y módulos de gestión
-base/
-  bd_ventas.sql
-```
+## Despliegue en Vercel + TiDB Cloud
 
-La API conserva los nombres de tabla y columna del volcado original
-(`empleado`, `cliente`, `producto`, `ventas`, `detalle_ventas`) y presenta una
-interfaz JSON en español funcional desde la web.
+1. Sube el repositorio a GitHub.
+2. En Vercel, importa el repositorio y define `nextjs` como **Root Directory**.
+3. En las variables de entorno de Vercel, configura `DATABASE_URL` (con TLS y la base `bd_ventas`) y `SESSION_SECRET` (aleatorio, único y de al menos 32 caracteres) para cada entorno que uses.
+4. Despliega. El hook `postinstall` genera Prisma Client y `npm run build` vuelve a generarlo antes de compilar Next.js.
+
+Mantén privadas las credenciales de TiDB y nunca las agregues al repositorio.
+
+## API
+
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| `POST` | `/api/auth/login` | Iniciar sesión (`user`, `password`/DNI) |
+| `GET` | `/api/auth/session` | Consultar sesión actual |
+| `POST` | `/api/auth/logout` | Cerrar sesión |
+| `GET`, `POST` | `/api/clientes` | Listar y crear clientes |
+| `PUT`, `DELETE` | `/api/clientes/:id` | Actualizar y eliminar clientes |
+| `GET`, `POST` | `/api/empleados` | Listar y crear empleados |
+| `PUT`, `DELETE` | `/api/empleados/:id` | Actualizar y eliminar empleados |
+| `GET`, `POST` | `/api/productos` | Listar y crear productos |
+| `PUT`, `DELETE` | `/api/productos/:id` | Actualizar y eliminar productos |
+| `GET`, `POST` | `/api/ventas` | Consultar ventas y registrar una venta |
