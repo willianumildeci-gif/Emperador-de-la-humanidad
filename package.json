@@ -1,14 +1,20 @@
 {
-  "name": "mi-sistema-ventas-vite-js",
-  "version": "0.0.0",
+  "name": "sistema-ventas",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "concurrently -k -n api,web -c blue,green \"npm run start:dev -w @sistema-ventas/api\" \"npm run dev -w @sistema-ventas/web\"",
+    "build": "npm run build -w @sistema-ventas/api && npm run build -w @sistema-ventas/web",
+    "start": "concurrently -k -n api,web -c blue,green \"npm run start:prod -w @sistema-ventas/api\" \"npm run start -w @sistema-ventas/web\""
   },
   "devDependencies": {
-    "vite": "^8.3.0"
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }
