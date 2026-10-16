@@ -1,81 +1,51 @@
-# SistemaVentas — Next.js
+# Sistema de Ventas (NestJS)
 
-Aplicación web para gestionar clientes, empleados, productos e historial de ventas. Se generó con `npx create-next-app@latest`, usa Next.js App Router, Tailwind CSS, API Routes y Prisma ORM. El proyecto Java/NetBeans original permanece en la carpeta superior.
+Migración del sistema web de NetBeans 8.2 a NestJS. Mantiene el menú y el estilo Bootstrap del proyecto original, sirve vistas con Handlebars y usa Prisma para conectarse a la base de datos MariaDB/MySQL `bd_ventas`.
 
 ## Requisitos
 
-- Node.js 20.9 o posterior.
-- MySQL 8/MariaDB o una instancia MySQL compatible de TiDB Cloud.
-- La base existente `bd_ventas`, cargada desde `../base/bd_ventas.sql`.
+- Node.js 20 o posterior
+- MariaDB/MySQL
 
-## Desarrollo local
+## Instalación
 
-1. Instala dependencias desde esta carpeta:
+1. Importe `base/bd_ventas.sql` en MariaDB/MySQL. Si aún no existe la base, créela primero y selecciónela para importar el archivo:
 
-   ```bash
+   ```sql
+   CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
+   USE bd_ventas;
+   ```
+
+   El archivo contiene las tablas y los datos iniciales, pero asume que `bd_ventas` ya está seleccionada. Haga una copia de seguridad antes de importarlo en una base existente.
+2. Configure las variables de entorno:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   Ajuste `DATABASE_URL` con el usuario, contraseña, host y puerto de su servidor MariaDB. Configure también un valor aleatorio y privado para `SESSION_SECRET`.
+3. Instale dependencias, genere el cliente Prisma y ejecute la aplicación:
+
+   ```powershell
    npm install
+   npx prisma generate
+   npm run start:dev
    ```
 
-2. Copia `.env.example` a `.env.local` y configura las credenciales MySQL:
+4. Abra <http://localhost:3000>.
 
-   ```env
-   DATABASE_URL="mysql://usuario:contraseña@host:4000/bd_ventas?sslaccept=strict"
-   SESSION_SECRET="una-clave-aleatoria-de-al-menos-32-caracteres"
-   ```
+El inicio de sesión conserva el comportamiento de `Validar.java`: use el campo `User` del empleado como usuario y su DNI como contraseña. Por ejemplo, en los datos iniciales: usuario `emp01`, contraseña `123`. Esta contraseña en texto plano es una limitación heredada del SQL original; no se debe exponer esta base de prueba en producción sin implementar almacenamiento de contraseñas con hash.
 
-   Para TiDB Cloud, usa el endpoint, puerto, usuario y contraseña que proporciona el clúster y conserva TLS (`sslaccept=strict`). Codifica caracteres especiales de usuario/contraseña como URL-encoding.
+## API REST
 
-3. Asegúrate de que exista la base `bd_ventas` y luego importa `../base/bd_ventas.sql` en ella. Por ejemplo, con el cliente `mysql`:
+Todos los recursos, excepto autenticación, requieren una sesión iniciada. La sesión se almacena en una cookie `HttpOnly`.
 
-   ```bash
-   mysql --host=HOST --port=4000 --user=USER --password --ssl-mode=VERIFY_IDENTITY --execute="CREATE DATABASE IF NOT EXISTS bd_ventas"
-   mysql --host=HOST --port=4000 --user=USER --password --ssl-mode=VERIFY_IDENTITY bd_ventas < ../base/bd_ventas.sql
-   ```
+| Recurso | Operaciones |
+| --- | --- |
+| `/auth/login`, `/auth/logout`, `/auth/me` | Inicio, cierre y consulta de sesión |
+| `/productos` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
+| `/clientes` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
+| `/empleados` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
+| `/ventas` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
 
-   O importa el archivo desde el editor SQL de TiDB Cloud. El esquema de Prisma está mapeado a las tablas y columnas originales; no ejecutes `prisma db push` contra la base con datos.
-
-4. Arranca Next.js:
-
-   ```bash
-   npm run dev
-   ```
-
-   Abre `http://localhost:3000`.
-
-## Inicio de sesión heredado
-
-La base original no incluye una columna de contraseña: el servlet Java validaba `User` contra `Dni`. La pantalla migrada conserva ese comportamiento por compatibilidad. Los datos de ejemplo del SQL incluyen el usuario `emp01` y DNI `123` (también hay otros usuarios/DNI en `empleado`). Cambia este mecanismo por contraseñas con hash antes de usar el sistema con cuentas reales.
-
-La sesión de Next.js se firma con `SESSION_SECRET`, se guarda en una cookie `HttpOnly`, `SameSite=Lax` y usa `Secure` en producción.
-
-## Funcionalidad
-
-- Panel con recuentos, inventario y ventas recientes.
-- Alta, consulta, edición y eliminación de clientes, empleados y productos.
-- Registro de ventas con varios productos, cálculo de precios desde la base de datos y descuento de stock transaccional.
-- Rutas API protegidas por sesión bajo `/api`.
-- Prisma mapea directamente las cinco tablas existentes (`cliente`, `empleado`, `producto`, `ventas`, `detalle_ventas`).
-
-## Despliegue en Vercel + TiDB Cloud
-
-1. Sube el repositorio a GitHub.
-2. En Vercel, importa el repositorio y define `nextjs` como **Root Directory**.
-3. En las variables de entorno de Vercel, configura `DATABASE_URL` (con TLS y la base `bd_ventas`) y `SESSION_SECRET` (aleatorio, único y de al menos 32 caracteres) para cada entorno que uses.
-4. Despliega. El hook `postinstall` genera Prisma Client y `npm run build` vuelve a generarlo antes de compilar Next.js.
-
-Mantén privadas las credenciales de TiDB y nunca las agregues al repositorio.
-
-## API
-
-| Método | Ruta | Uso |
-| --- | --- | --- |
-| `POST` | `/api/auth/login` | Iniciar sesión (`user`, `password`/DNI) |
-| `GET` | `/api/auth/session` | Consultar sesión actual |
-| `POST` | `/api/auth/logout` | Cerrar sesión |
-| `GET`, `POST` | `/api/clientes` | Listar y crear clientes |
-| `PUT`, `DELETE` | `/api/clientes/:id` | Actualizar y eliminar clientes |
-| `GET`, `POST` | `/api/empleados` | Listar y crear empleados |
-| `PUT`, `DELETE` | `/api/empleados/:id` | Actualizar y eliminar empleados |
-| `GET`, `POST` | `/api/productos` | Listar y crear productos |
-| `PUT`, `DELETE` | `/api/productos/:id` | Actualizar y eliminar productos |
-| `GET`, `POST` | `/api/ventas` | Consultar ventas y registrar una venta |
+Al crear una venta, envíe `clienteId`, `empleadoId` y `items: [{ "productoId": 1, "cantidad": 2 }]`. El servidor calcula el total y actualiza el stock dentro de una transacción; al eliminar una venta, devuelve las cantidades al inventario.
