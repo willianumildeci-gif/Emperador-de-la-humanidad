@@ -1,51 +1,50 @@
-# Sistema de Ventas (NestJS)
+# Sistema de Ventas Web — FastAPI
 
-Migración del sistema web de NetBeans 8.2 a NestJS. Mantiene el menú y el estilo Bootstrap del proyecto original, sirve vistas con Handlebars y usa Prisma para conectarse a la base de datos MariaDB/MySQL `bd_ventas`.
+Réplica web del proyecto de NetBeans 8. Conserva Bootstrap 4 y el flujo visual original; incluye inicio de sesión, mantenimiento de empleados/clientes/productos y registro de ventas con actualización de existencias.
 
 ## Requisitos
 
-- Node.js 20 o posterior
-- MariaDB/MySQL
+- Python 3.10 o posterior
+- MySQL o MariaDB activo
+- Una base de datos importada desde `base\bd_ventas.sql`
 
-## Instalación
+## Preparar la base de datos
 
-1. Importe `base/bd_ventas.sql` en MariaDB/MySQL. Si aún no existe la base, créela primero y selecciónela para importar el archivo:
+El volcado `base\bd_ventas.sql` crea las tablas y carga los datos de ejemplo, pero no crea la base de datos. Créala primero, por ejemplo desde phpMyAdmin o el cliente MySQL:
 
-   ```sql
-   CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
-   USE bd_ventas;
-   ```
+```sql
+CREATE DATABASE bd_ventas CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
 
-   El archivo contiene las tablas y los datos iniciales, pero asume que `bd_ventas` ya está seleccionada. Haga una copia de seguridad antes de importarlo en una base existente.
-2. Configure las variables de entorno:
+Selecciona `bd_ventas` e importa `base\bd_ventas.sql`. La aplicación usa las tablas ya existentes y no ejecuta migraciones.
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+## Instalar y ejecutar (Windows)
 
-   Ajuste `DATABASE_URL` con el usuario, contraseña, host y puerto de su servidor MariaDB. Configure también un valor aleatorio y privado para `SESSION_SECRET`.
-3. Instale dependencias, genere el cliente Prisma y ejecute la aplicación:
+Desde la carpeta `SistemasVentas`:
 
-   ```powershell
-   npm install
-   npx prisma generate
-   npm run start:dev
-   ```
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+py -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
 
-4. Abra <http://localhost:3000>.
+Edita `.env` con los datos de tu servidor. La configuración inicial coincide con la conexión local que declara el código Java (`root` sin contraseña) y con el nombre de base de datos del SQL (`bd_ventas`); cambia usuario y contraseña si tu instalación es distinta. Define además `SESSION_SECRET` con una clave privada aleatoria.
 
-El inicio de sesión conserva el comportamiento de `Validar.java`: use el campo `User` del empleado como usuario y su DNI como contraseña. Por ejemplo, en los datos iniciales: usuario `emp01`, contraseña `123`. Esta contraseña en texto plano es una limitación heredada del SQL original; no se debe exponer esta base de prueba en producción sin implementar almacenamiento de contraseñas con hash.
+Inicia el servidor:
 
-## API REST
+```powershell
+py -m uvicorn app.main:app --reload
+```
 
-Todos los recursos, excepto autenticación, requieren una sesión iniciada. La sesión se almacena en una cookie `HttpOnly`.
+Abre <http://127.0.0.1:8000>.
 
-| Recurso | Operaciones |
-| --- | --- |
-| `/auth/login`, `/auth/logout`, `/auth/me` | Inicio, cierre y consulta de sesión |
-| `/productos` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/clientes` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/empleados` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/ventas` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
+## Acceso de muestra
 
-Al crear una venta, envíe `clienteId`, `empleadoId` y `items: [{ "productoId": 1, "cantidad": 2 }]`. El servidor calcula el total y actualiza el stock dentro de una transacción; al eliminar una venta, devuelve las cantidades al inventario.
+El proyecto Java valida el usuario contra `empleado.User` y `empleado.Dni` (no hay una columna de contraseña en el esquema). Por eso el formulario de acceso conserva ese comportamiento y pide el DNI como contraseña. Con los datos incluidos en el volcado, un ejemplo es `emp01` / `123`.
+
+## Notas
+
+- La configuración MySQL se toma de `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE` en `.env`.
+- La sesión de la aplicación usa `SESSION_SECRET`. Para servirla por HTTPS, configura también `HTTPS_ONLY=true`.
+- Los errores de conexión/configuración de MySQL se muestran en el registro del servidor; verifica el servicio y las variables de entorno si la aplicación no puede acceder a la base de datos.

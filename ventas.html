@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Nueva venta | Sistema de Ventas{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Registrar Venta</h1>
+<div class="row">
+    <div class="col-lg-5 mb-4"><div class="card"><div class="card-body">
+        <h2 class="h5">Nueva venta</h2>
+        {% if not clientes %}<div class="alert alert-warning">Registra un cliente antes de crear una venta.</div>{% endif %}
+        {% if not productos %}<div class="alert alert-warning">Registra un producto antes de crear una venta.</div>{% endif %}
+        <form action="/ventas/registrar" method="post" id="sale-form">
+            <div class="form-group"><label for="id_cliente">Cliente</label><select class="form-control" name="id_cliente" id="id_cliente" required>
+                <option value="">Selecciona un cliente</option>{% for row in clientes if row.Estado == "1" %}
+                <option value="{{ row.IdCliente }}">{{ row.Nombres }} — {{ row.Dni }}</option>{% endfor %}
+            </select></div>
+            <div id="sale-items">
+                <div class="sale-item form-row align-items-end mb-2">
+                    <div class="col-7"><label>Producto</label><select class="form-control product-choice" name="producto_ids" required>
+                        <option value="">Selecciona</option>{% for row in productos if row.Estado == "1" and row.Stock and row.Stock > 0 %}
+                        <option value="{{ row.IdProducto }}">{{ row.Nombres }} — S/ {{ "%.2f"|format(row.Precio or 0) }} ({{ row.Stock }} disp.)</option>{% endfor %}
+                    </select></div>
+                    <div class="col-3"><label>Cantidad</label><input class="form-control" name="cantidades" type="number" min="1" value="1" required></div>
+                    <div class="col-2"><button class="btn btn-outline-danger remove-item" type="button" aria-label="Quitar producto">&times;</button></div>
+                </div>
+            </div>
+            <button class="btn btn-outline-info btn-sm mb-3" id="add-item" type="button">Agregar producto</button>
+            <div><button class="btn btn-success" type="submit" {% if not clientes or not productos %}disabled{% endif %}>Registrar venta</button></div>
+        </form>
+    </div></div></div>
+    <div class="col-lg-7"><h2 class="h5 mb-3">Ventas registradas</h2>
+        <div class="table-responsive"><table class="table table-hover table-bordered bg-white">
+            <thead class="thead-light"><tr><th>N.º</th><th>SERIE</th><th>FECHA</th><th>CLIENTE</th><th>EMPLEADO</th><th>MONTO</th></tr></thead>
+            <tbody>{% for row in ventas %}<tr><td>{{ row.IdVentas }}</td><td>{{ row.NumeroSerie or "" }}</td><td>{{ row.FechaVentas or "" }}</td><td>{{ row.Cliente }}</td><td>{{ row.Empleado }}</td><td>S/ {{ "%.2f"|format(row.Monto or 0) }}</td></tr>
+            {% else %}<tr><td colspan="6" class="text-center text-muted">Todavía no hay ventas registradas.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+    const items = document.getElementById("sale-items");
+    document.getElementById("add-item").addEventListener("click", () => {
+        const row = items.querySelector(".sale-item").cloneNode(true);
+        row.querySelector("select").selectedIndex = 0;
+        row.querySelector('input[name="cantidades"]').value = 1;
+        items.appendChild(row);
+    });
+    items.addEventListener("click", (event) => {
+        if (event.target.closest(".remove-item") && items.querySelectorAll(".sale-item").length > 1) {
+            event.target.closest(".sale-item").remove();
+        }
+    });
+})();
+</script>
+{% endblock %}

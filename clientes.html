@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Clientes | Sistema de Ventas{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Clientes</h1>
+<div class="row">
+    <div class="col-lg-4 col-xl-3 mb-4"><div class="card"><div class="card-body">
+        <h2 class="h5">{{ "Editar cliente" if cliente else "Nuevo cliente" }}</h2>
+        <form action="/clientes/guardar" method="post">
+            {% if cliente %}<input type="hidden" name="id_cliente" value="{{ cliente.IdCliente }}">{% endif %}
+            <div class="form-group"><label for="dni">DNI</label><input class="form-control" id="dni" name="dni" maxlength="8" required value="{{ cliente.Dni if cliente else '' }}"></div>
+            <div class="form-group"><label for="nombres">Nombres</label><input class="form-control" id="nombres" name="nombres" maxlength="244" required value="{{ cliente.Nombres if cliente else '' }}"></div>
+            <div class="form-group"><label for="direccion">Dirección</label><input class="form-control" id="direccion" name="direccion" maxlength="244" value="{{ cliente.Direccion if cliente else '' }}"></div>
+            <div class="form-group"><label for="estado">Estado</label><select class="form-control" id="estado" name="estado">
+                <option value="1" {% if not cliente or cliente.Estado == "1" %}selected{% endif %}>Activo</option>
+                <option value="0" {% if cliente and cliente.Estado != "1" %}selected{% endif %}>Inactivo</option>
+            </select></div>
+            <button class="btn btn-info" type="submit">{{ "Actualizar" if cliente else "Agregar" }}</button>
+            {% if cliente %}<a class="btn btn-light" href="/clientes">Cancelar</a>{% endif %}
+        </form>
+    </div></div></div>
+    <div class="col-lg-8 col-xl-9"><div class="table-responsive">
+        <table class="table table-hover table-bordered bg-white"><thead class="thead-light"><tr><th>ID</th><th>DNI</th><th>NOMBRES</th><th>DIRECCIÓN</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+        <tbody>{% for row in clientes %}<tr><td>{{ row.IdCliente }}</td><td>{{ row.Dni or "" }}</td><td>{{ row.Nombres or "" }}</td><td>{{ row.Direccion or "" }}</td><td>{{ "Activo" if row.Estado == "1" else "Inactivo" }}</td>
+            <td class="actions-cell"><a class="btn btn-warning btn-sm" href="/clientes?editar_id={{ row.IdCliente }}">Editar</a>
+                <form class="d-inline" action="/clientes/{{ row.IdCliente }}/eliminar" method="post" onsubmit="return confirm('¿Eliminar este cliente?')"><button class="btn btn-danger btn-sm" type="submit">Eliminar</button></form>
+            </td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted">No hay clientes registrados.</td></tr>{% endfor %}</tbody></table>
+    </div></div>
+</div>
+{% endblock %}

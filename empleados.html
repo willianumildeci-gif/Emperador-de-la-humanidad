@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Empleados | Sistema de Ventas{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Empleados</h1>
+<div class="row">
+    <div class="col-lg-4 col-xl-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">{{ "Editar empleado" if empleado else "Nuevo empleado" }}</h2>
+                <form action="/empleados/guardar" method="post">
+                    {% if empleado %}<input type="hidden" name="id_empleado" value="{{ empleado.IdEmpleado }}">{% endif %}
+                    <div class="form-group"><label for="dni">DNI</label>
+                        <input class="form-control" id="dni" name="dni" maxlength="8" required value="{{ empleado.Dni if empleado else '' }}"></div>
+                    <div class="form-group"><label for="nombres">Nombres</label>
+                        <input class="form-control" id="nombres" name="nombres" maxlength="255" required value="{{ empleado.Nombres if empleado else '' }}"></div>
+                    <div class="form-group"><label for="telefono">Teléfono</label>
+                        <input class="form-control" id="telefono" name="telefono" maxlength="9" value="{{ empleado.Telefono if empleado else '' }}"></div>
+                    <div class="form-group"><label for="estado">Estado</label>
+                        <select class="form-control" id="estado" name="estado">
+                            <option value="1" {% if not empleado or empleado.Estado == "1" %}selected{% endif %}>Activo</option>
+                            <option value="0" {% if empleado and empleado.Estado != "1" %}selected{% endif %}>Inactivo</option>
+                        </select></div>
+                    <div class="form-group"><label for="user">Usuario</label>
+                        <input class="form-control" id="user" name="user" maxlength="8" required value="{{ empleado.User if empleado else '' }}"></div>
+                    <button class="btn btn-info" type="submit">{{ "Actualizar" if empleado else "Agregar" }}</button>
+                    {% if empleado %}<a class="btn btn-light" href="/empleados">Cancelar</a>{% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 col-xl-9">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered bg-white">
+                <thead class="thead-light"><tr><th>ID</th><th>DNI</th><th>NOMBRES</th><th>TELÉFONO</th><th>ESTADO</th><th>USUARIO</th><th>ACCIONES</th></tr></thead>
+                <tbody>
+                {% for em in empleados %}
+                <tr>
+                    <td>{{ em.IdEmpleado }}</td><td>{{ em.Dni }}</td><td>{{ em.Nombres }}</td>
+                    <td>{{ em.Telefono or "" }}</td><td>{{ "Activo" if em.Estado == "1" else "Inactivo" }}</td><td>{{ em.User or "" }}</td>
+                    <td class="actions-cell">
+                        <a class="btn btn-warning btn-sm" href="/empleados?editar_id={{ em.IdEmpleado }}">Editar</a>
+                        <form class="d-inline" action="/empleados/{{ em.IdEmpleado }}/eliminar" method="post" onsubmit="return confirm('¿Eliminar este empleado?')">
+                            <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}<tr><td colspan="7" class="text-center text-muted">No hay empleados registrados.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

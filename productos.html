@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Productos | Sistema de Ventas{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Productos</h1>
+<div class="row">
+    <div class="col-lg-4 col-xl-3 mb-4"><div class="card"><div class="card-body">
+        <h2 class="h5">{{ "Editar producto" if producto else "Nuevo producto" }}</h2>
+        <form action="/productos/guardar" method="post">
+            {% if producto %}<input type="hidden" name="id_producto" value="{{ producto.IdProducto }}">{% endif %}
+            <div class="form-group"><label for="nombres">Nombre</label><input class="form-control" id="nombres" name="nombres" maxlength="244" required value="{{ producto.Nombres if producto else '' }}"></div>
+            <div class="form-group"><label for="precio">Precio</label><input class="form-control" id="precio" name="precio" type="number" min="0" step="0.01" required value="{{ producto.Precio if producto else '' }}"></div>
+            <div class="form-group"><label for="stock">Stock</label><input class="form-control" id="stock" name="stock" type="number" min="0" step="1" required value="{{ producto.Stock if producto else 0 }}"></div>
+            <div class="form-group"><label for="estado">Estado</label><select class="form-control" id="estado" name="estado">
+                <option value="1" {% if not producto or producto.Estado == "1" %}selected{% endif %}>Activo</option>
+                <option value="0" {% if producto and producto.Estado != "1" %}selected{% endif %}>Inactivo</option>
+            </select></div>
+            <button class="btn btn-info" type="submit">{{ "Actualizar" if producto else "Agregar" }}</button>
+            {% if producto %}<a class="btn btn-light" href="/productos">Cancelar</a>{% endif %}
+        </form>
+    </div></div></div>
+    <div class="col-lg-8 col-xl-9"><div class="table-responsive">
+        <table class="table table-hover table-bordered bg-white"><thead class="thead-light"><tr><th>ID</th><th>PRODUCTO</th><th>PRECIO</th><th>STOCK</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+        <tbody>{% for row in productos %}<tr><td>{{ row.IdProducto }}</td><td>{{ row.Nombres or "" }}</td><td>S/ {{ "%.2f"|format(row.Precio or 0) }}</td><td>{{ row.Stock or 0 }}</td><td>{{ "Activo" if row.Estado == "1" else "Inactivo" }}</td>
+            <td class="actions-cell"><a class="btn btn-warning btn-sm" href="/productos?editar_id={{ row.IdProducto }}">Editar</a>
+                <form class="d-inline" action="/productos/{{ row.IdProducto }}/eliminar" method="post" onsubmit="return confirm('¿Eliminar este producto?')"><button class="btn btn-danger btn-sm" type="submit">Eliminar</button></form>
+            </td></tr>{% else %}<tr><td colspan="6" class="text-center text-muted">No hay productos registrados.</td></tr>{% endfor %}</tbody></table>
+    </div></div>
+</div>
+{% endblock %}

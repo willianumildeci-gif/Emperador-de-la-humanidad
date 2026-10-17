@@ -1,0 +1,39 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.login-page {
+    margin-top: 1rem;
+}
+
+.login-logo {
+    display: block;
+    width: 170px;
+    height: 70px;
+    object-fit: cover;
+    margin: 0 auto 0.5rem;
+}
+
+.welcome-panel {
+    min-height: 300px;
+    padding: 5rem 2rem;
+    text-align: center;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+}
+
+.actions-cell {
+    min-width: 145px;
+    white-space: nowrap;
+}
+
+.sale-item .col-2 {
+    padding-left: 0;
+}
+
+@media (max-width: 575.98px) {
+    .welcome-panel {
+        padding: 3rem 1rem;
+    }
+}
