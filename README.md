@@ -1,51 +1,21 @@
-# Sistema de Ventas (NestJS)
+# Sistema de Ventas en Laravel
 
-Migración del sistema web de NetBeans 8.2 a NestJS. Mantiene el menú y el estilo Bootstrap del proyecto original, sirve vistas con Handlebars y usa Prisma para conectarse a la base de datos MariaDB/MySQL `bd_ventas`.
+Esta aplicación Laravel conserva la pantalla de acceso, el menú y el mantenimiento de empleados de la versión PHP pura. Las opciones Producto, Clientes y Nueva Venta muestran los mismos títulos que la versión original. Ambas versiones utilizan el esquema `bd_ventas`; Laravel no migra ni modifica automáticamente esa base de datos.
 
 ## Requisitos
 
-- Node.js 20 o posterior
-- MariaDB/MySQL
+- Laragon con PHP 8.2 o superior y las extensiones PDO MySQL.
+- MySQL/MariaDB iniciado desde Laragon.
+- Composer (incluido con Laragon).
 
-## Instalación
+## Preparación en Laragon
 
-1. Importe `base/bd_ventas.sql` en MariaDB/MySQL. Si aún no existe la base, créela primero y selecciónela para importar el archivo:
+1. Importe `..\base\bd_ventas.sql` en MySQL/MariaDB si todavía no existe la base `bd_ventas`.
+2. Revise las credenciales en `.env` (`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`). La configuración inicial usa `127.0.0.1`, `bd_ventas`, `root` y contraseña vacía.
+3. En esta carpeta ejecute `composer install` si la carpeta `vendor` no está presente.
+4. Inicie Laragon y ejecute `php artisan serve` desde esta carpeta.
+5. Abra `http://127.0.0.1:8000`.
 
-   ```sql
-   CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
-   USE bd_ventas;
-   ```
+El inicio de sesión mantiene la regla original: el usuario se verifica contra `empleado.User` y la contraseña contra `empleado.Dni`. Con los registros de ejemplo, se puede usar `emp01` y `123`.
 
-   El archivo contiene las tablas y los datos iniciales, pero asume que `bd_ventas` ya está seleccionada. Haga una copia de seguridad antes de importarlo en una base existente.
-2. Configure las variables de entorno:
-
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
-   Ajuste `DATABASE_URL` con el usuario, contraseña, host y puerto de su servidor MariaDB. Configure también un valor aleatorio y privado para `SESSION_SECRET`.
-3. Instale dependencias, genere el cliente Prisma y ejecute la aplicación:
-
-   ```powershell
-   npm install
-   npx prisma generate
-   npm run start:dev
-   ```
-
-4. Abra <http://localhost:3000>.
-
-El inicio de sesión conserva el comportamiento de `Validar.java`: use el campo `User` del empleado como usuario y su DNI como contraseña. Por ejemplo, en los datos iniciales: usuario `emp01`, contraseña `123`. Esta contraseña en texto plano es una limitación heredada del SQL original; no se debe exponer esta base de prueba en producción sin implementar almacenamiento de contraseñas con hash.
-
-## API REST
-
-Todos los recursos, excepto autenticación, requieren una sesión iniciada. La sesión se almacena en una cookie `HttpOnly`.
-
-| Recurso | Operaciones |
-| --- | --- |
-| `/auth/login`, `/auth/logout`, `/auth/me` | Inicio, cierre y consulta de sesión |
-| `/productos` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/clientes` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/empleados` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/ventas` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-
-Al crear una venta, envíe `clienteId`, `empleadoId` y `items: [{ "productoId": 1, "cantidad": 2 }]`. El servidor calcula el total y actualiza el stock dentro de una transacción; al eliminar una venta, devuelve las cantidades al inventario.
+El proyecto Laravel está separado en esta subcarpeta para mantener disponible la aplicación PHP pura original. No ejecute `php artisan migrate` sobre `bd_ventas`: el SQL original define el esquema compatible que consume esta aplicación.
