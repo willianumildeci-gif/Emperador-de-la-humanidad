@@ -1,51 +1,55 @@
-# Sistema de Ventas (NestJS)
+# Sistema de Ventas en Django
 
-Migración del sistema web de NetBeans 8.2 a NestJS. Mantiene el menú y el estilo Bootstrap del proyecto original, sirve vistas con Handlebars y usa Prisma para conectarse a la base de datos MariaDB/MySQL `bd_ventas`.
+Esta aplicación reproduce la pantalla de acceso, el menú principal y la gestión
+de empleados del proyecto Java. Clientes, productos y registro de ventas
+conservan las páginas vacías del original.
 
-## Requisitos
+La configuración apunta al volcado MySQL incluido en `..\base\bd_ventas.sql`.
+La aplicación Django no crea ni modifica las tablas existentes: el modelo
+`Empleado` es de solo mapeo (`managed = False`).
 
-- Node.js 20 o posterior
-- MariaDB/MySQL
+## Requisitos e instalación
 
-## Instalación
+- Python 3.10 o superior
+- MySQL o MariaDB
+- La base `bd_ventas` importada desde `..\base\bd_ventas.sql`
 
-1. Importe `base/bd_ventas.sql` en MariaDB/MySQL. Si aún no existe la base, créela primero y selecciónela para importar el archivo:
+El archivo SQL es un volcado de tablas y no crea la base de datos. En
+phpMyAdmin, crea una base llamada `bd_ventas`, selecciónala, abre **Importar** y
+carga `base\bd_ventas.sql` antes de iniciar Django.
 
-   ```sql
-   CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
-   USE bd_ventas;
-   ```
+Desde esta carpeta:
 
-   El archivo contiene las tablas y los datos iniciales, pero asume que `bd_ventas` ya está seleccionada. Haga una copia de seguridad antes de importarlo en una base existente.
-2. Configure las variables de entorno:
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+Define credenciales según la instalación local. Los valores por defecto son
+`bd_ventas`, usuario `root`, contraseña vacía, host `127.0.0.1` y puerto `3306`.
 
-   Ajuste `DATABASE_URL` con el usuario, contraseña, host y puerto de su servidor MariaDB. Configure también un valor aleatorio y privado para `SESSION_SECRET`.
-3. Instale dependencias, genere el cliente Prisma y ejecute la aplicación:
+```powershell
+$env:MYSQL_DATABASE = "bd_ventas"
+$env:MYSQL_USER = "root"
+$env:MYSQL_PASSWORD = "tu_contraseña"
+$env:MYSQL_HOST = "127.0.0.1"
+$env:MYSQL_PORT = "3306"
+```
 
-   ```powershell
-   npm install
-   npx prisma generate
-   npm run start:dev
-   ```
+Inicia el servidor:
 
-4. Abra <http://localhost:3000>.
+```powershell
+python manage.py runserver
+```
 
-El inicio de sesión conserva el comportamiento de `Validar.java`: use el campo `User` del empleado como usuario y su DNI como contraseña. Por ejemplo, en los datos iniciales: usuario `emp01`, contraseña `123`. Esta contraseña en texto plano es una limitación heredada del SQL original; no se debe exponer esta base de prueba en producción sin implementar almacenamiento de contraseñas con hash.
+Abre <http://127.0.0.1:8000/>. El acceso replica el esquema existente: el nombre
+de usuario se compara con `empleado.User` y la contraseña con `empleado.Dni`.
+Por ejemplo, una fila de muestra incluida permite ingresar con el usuario
+`emp01` y el DNI `123`. La tabla SQL no tiene un campo de contraseña; para
+producción se debe migrar primero a credenciales con hash antes de exponer el
+sitio.
 
-## API REST
-
-Todos los recursos, excepto autenticación, requieren una sesión iniciada. La sesión se almacena en una cookie `HttpOnly`.
-
-| Recurso | Operaciones |
-| --- | --- |
-| `/auth/login`, `/auth/logout`, `/auth/me` | Inicio, cierre y consulta de sesión |
-| `/productos` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/clientes` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/empleados` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/ventas` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-
-Al crear una venta, envíe `clienteId`, `empleadoId` y `items: [{ "productoId": 1, "cantidad": 2 }]`. El servidor calcula el total y actualiza el stock dentro de una transacción; al eliminar una venta, devuelve las cantidades al inventario.
+No es necesario ejecutar migraciones para las tablas del sistema; están
+administradas por la base existente. Los estáticos Bootstrap e imagen de acceso
+se sirven desde la carpeta `web` del proyecto Java.

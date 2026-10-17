@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Empleado</title>
+    <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}">
+</head>
+<body>
+    <div class="d-flex flex-wrap">
+        <section class="card col-sm-5">
+            <div class="card-body">
+                <form action="{% if empleado_en_edicion %}{% url 'editar_empleado' empleado_en_edicion.id %}{% else %}{% url 'agregar_empleado' %}{% endif %}" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                    {% if empleado_en_edicion %}
+                        <button type="submit" class="btn btn-success">Actualizar</button>
+                        <a class="btn btn-secondary" href="{% url 'empleados' %}">Cancelar</a>
+                    {% else %}
+                        <button type="submit" class="btn btn-info">Agregar</button>
+                    {% endif %}
+                </form>
+            </div>
+        </section>
+        <section class="col-sm-7">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>DNI</th>
+                            <th>NOMBRES</th>
+                            <th>TELEFONO</th>
+                            <th>ESTADO</th>
+                            <th>USUARIO</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empleado in empleados %}
+                            <tr>
+                                <td>{{ empleado.id }}</td>
+                                <td>{{ empleado.dni }}</td>
+                                <td>{{ empleado.nombres }}</td>
+                                <td>{{ empleado.telefono }}</td>
+                                <td>{{ empleado.estado }}</td>
+                                <td>{{ empleado.usuario }}</td>
+                                <td class="text-nowrap">
+                                    <a class="btn btn-warning btn-sm" href="{% url 'empleados' %}?editar={{ empleado.id }}">Editar</a>
+                                    <form class="d-inline" action="{% url 'eliminar_empleado' empleado.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button class="btn btn-danger btn-sm" type="submit">Eliminar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay empleados registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
