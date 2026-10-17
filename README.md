@@ -1,51 +1,59 @@
-# Sistema de Ventas (NestJS)
+# Sistema de Ventas Web (Flask)
 
-Migración del sistema web de NetBeans 8.2 a NestJS. Mantiene el menú y el estilo Bootstrap del proyecto original, sirve vistas con Handlebars y usa Prisma para conectarse a la base de datos MariaDB/MySQL `bd_ventas`.
+Port del proyecto Java/JSP de NetBeans 8. Conserva la pantalla de acceso, el
+menú principal con contenido en iframe y el mantenimiento de empleados. Las
+pantallas de Clientes, Producto y Nueva Venta siguen siendo marcadores, tal
+como en la versión original.
 
 ## Requisitos
 
-- Node.js 20 o posterior
-- MariaDB/MySQL
+- Python 3.10 o posterior
+- MySQL o MariaDB con la base `bd_ventas`
 
-## Instalación
+## Instalación en Windows
 
-1. Importe `base/bd_ventas.sql` en MariaDB/MySQL. Si aún no existe la base, créela primero y selecciónela para importar el archivo:
+Desde la carpeta del proyecto, crea un entorno virtual e instala las
+dependencias:
 
-   ```sql
-   CREATE DATABASE bd_ventas CHARACTER SET utf8 COLLATE utf8_general_ci;
-   USE bd_ventas;
-   ```
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-   El archivo contiene las tablas y los datos iniciales, pero asume que `bd_ventas` ya está seleccionada. Haga una copia de seguridad antes de importarlo en una base existente.
-2. Configure las variables de entorno:
+El archivo `base\bd_ventas.sql` contiene la estructura y los datos iniciales.
+Si todavía no has importado el volcado, crea la base e impórtalo desde
+PowerShell:
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+```powershell
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS bd_ventas CHARACTER SET utf8mb4"
+cmd /c "mysql -u root bd_ventas < base\bd_ventas.sql"
+```
 
-   Ajuste `DATABASE_URL` con el usuario, contraseña, host y puerto de su servidor MariaDB. Configure también un valor aleatorio y privado para `SESSION_SECRET`.
-3. Instale dependencias, genere el cliente Prisma y ejecute la aplicación:
+La aplicación usa por defecto `localhost:3306`, usuario `root`, contraseña
+vacía y base `bd_ventas`, coherente con el volcado de `base`. Configura estas
+variables de entorno si tus credenciales son distintas:
 
-   ```powershell
-   npm install
-   npx prisma generate
-   npm run start:dev
-   ```
+```powershell
+$env:DB_HOST = "localhost"
+$env:DB_PORT = "3306"
+$env:DB_USER = "root"
+$env:DB_PASSWORD = "tu contraseña"
+$env:DB_NAME = "bd_ventas"
+$env:SECRET_KEY = "reemplaza-por-una-clave-aleatoria"
+```
 
-4. Abra <http://localhost:3000>.
+Ejecuta la aplicación localmente con:
 
-El inicio de sesión conserva el comportamiento de `Validar.java`: use el campo `User` del empleado como usuario y su DNI como contraseña. Por ejemplo, en los datos iniciales: usuario `emp01`, contraseña `123`. Esta contraseña en texto plano es una limitación heredada del SQL original; no se debe exponer esta base de prueba en producción sin implementar almacenamiento de contraseñas con hash.
+```powershell
+python app.py
+```
 
-## API REST
+Abre <http://127.0.0.1:5000>. Para iniciar sesión se usa el campo `User` como
+usuario y `Dni` como contraseña, igual que en el servlet original.
 
-Todos los recursos, excepto autenticación, requieren una sesión iniciada. La sesión se almacena en una cookie `HttpOnly`.
+## Pruebas
 
-| Recurso | Operaciones |
-| --- | --- |
-| `/auth/login`, `/auth/logout`, `/auth/me` | Inicio, cierre y consulta de sesión |
-| `/productos` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/clientes` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/empleados` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-| `/ventas` | GET, POST, GET `/:id`, PATCH `/:id`, DELETE `/:id` |
-
-Al crear una venta, envíe `clienteId`, `empleadoId` y `items: [{ "productoId": 1, "cantidad": 2 }]`. El servidor calcula el total y actualiza el stock dentro de una transacción; al eliminar una venta, devuelve las cantidades al inventario.
+```powershell
+python -m unittest discover -s test -p "test_*.py"
+```
